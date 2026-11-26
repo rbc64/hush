@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hush · Ambient Noise Mixer by Tenplus Digital</title>
+<meta name="description" content="Mix rain, café chatter, fans, waves and white noise into your own focus or sleep soundscape. Free, in your browser.">
+<meta property="og:title" content="Hush · Ambient Noise Mixer">
+<meta property="og:description" content="Mix rain, café chatter, fans, waves and white noise into your own soundscape. Free, in your browser.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0a0d14">
+<style>
+:root{
+  --bg:#0a0d14; --panel:#121723; --card:#141a27; --card2:#192133; --line:#232c3f;
+  --text:#e8ecf4; --mute:#8b95aa; --dim:#5b6478; --accent:#7fd8c4; --accent2:#9aa8ff; --warn:#ffb86b;
+  --r:18px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background:
+  radial-gradient(1100px 600px at 10% -10%,rgba(127,216,196,.10),transparent 60%),
+  radial-gradient(900px 600px at 100% 0%,rgba(154,168,255,.10),transparent 60%),var(--bg);background-attachment:fixed}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:20;backdrop-filter:blur(14px);background:rgba(10,13,20,.78);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:16px;height:72px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;letter-spacing:.2px;margin-right:auto}
+.brand .dot{width:30px;height:30px;border-radius:50%;background:conic-gradient(from 200deg,var(--accent),var(--accent2),var(--accent));box-shadow:0 0 22px rgba(127,216,196,.35)}
+.brand small{font-weight:500;color:var(--mute);font-size:13px;margin-left:2px}
+.ctl{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--text);white-space:nowrap}
+.ctl:hover{border-color:#34405a}
+.ctl.on{border-color:var(--accent);color:var(--accent)}
+.master{display:flex;align-items:center;gap:8px;padding:0 14px}
+.master input{width:110px}
+.play{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#08231d;box-shadow:0 6px 24px rgba(127,216,196,.3);transition:transform .15s}
+.play:hover{transform:scale(1.05)}
+.play svg{width:20px;height:20px}
+.play:disabled{opacity:.35;box-shadow:none;cursor:default;transform:none}
+.status{font-size:13px;color:var(--mute);min-width:90px;text-align:right}
+
+/* timer menu */
+.tm{position:relative}
+.menu{position:absolute;right:0;top:48px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;min-width:150px;display:none;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.menu.open{display:block}
+.menu button{display:block;width:100%;text-align:left;padding:8px 12px;border-radius:9px;color:var(--text)}
+.menu button:hover{background:var(--card2)}
+.menu button.sel{color:var(--accent)}
+
+/* hero */
+.hero{padding:38px 0 8px}
+.hero h1{margin:0 0 6px;font-size:34px;letter-spacing:-.5px;font-weight:750}
+.hero p{margin:0;color:var(--mute);max-width:640px}
+
+/* tabs */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:26px 0 18px}
+.tab{padding:7px 14px;border-radius:999px;border:1px solid var(--line);color:var(--mute);background:transparent}
+.tab:hover{color:var(--text)}
+.tab.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.tab .n{opacity:.6;margin-left:4px;font-size:12px}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:14px}
+.card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;transition:border-color .2s,background .2s,transform .15s}
+.card:hover{border-color:#33405c}
+.card.on{background:linear-gradient(180deg,rgba(127,216,196,.10),rgba(127,216,196,.02) 70%),var(--card2);border-color:rgba(127,216,196,.55)}
+.tap{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:0;width:100%}
+.ico{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;font-size:30px;background:#1b2334;margin-bottom:8px;overflow:hidden;transition:box-shadow .2s,transform .2s}
+.ico img{width:100%;height:100%;object-fit:cover;display:block}
+.card:hover .ico{transform:scale(1.04)}
+.card.on .ico{box-shadow:0 0 0 2px rgba(127,216,196,.7),0 6px 22px rgba(127,216,196,.25)}
+.badge{position:absolute;left:92px;top:20px;font-size:10.5px;letter-spacing:.3px;text-transform:uppercase;padding:2px 7px;border-radius:999px;color:var(--mute);border:1px solid var(--line);background:rgba(10,13,20,.5)}
+.badge.magnific{color:#9aa8ff;border-color:rgba(154,168,255,.35)}
+.badge.suno{color:#ffb86b;border-color:rgba(255,184,107,.35)}
+.src{display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--panel);border:1px solid var(--line);height:40px;align-items:center}
+.src button{height:30px;padding:0 12px;border-radius:999px;color:var(--mute);font-size:13.5px}
+.src button.on{background:var(--text);color:var(--bg)}
+.src button:disabled{opacity:.35;cursor:default}
+.name{font-weight:650;font-size:15px}
+.desc{color:var(--mute);font-size:12.5px;line-height:1.35;min-height:34px}
+.vol{width:100%;opacity:.45;transition:opacity .2s}
+.card.on .vol{opacity:1}
+.eq{position:absolute;right:16px;top:18px;display:flex;gap:3px;align-items:flex-end;height:16px;opacity:0;transition:opacity .2s}
+.eq i{width:3px;background:var(--accent);border-radius:2px;height:4px}
+.card.on.live .eq{opacity:1}
+.card.on.live .eq i{animation:eq 1s ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:-.3s!important}.eq i:nth-child(3){animation-delay:-.6s!important}
+@keyframes eq{0%,100%{height:4px}50%{height:15px}}
+.spin{position:absolute;right:16px;top:18px;width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:sp .8s linear infinite;display:none}
+.card.loading .spin{display:block}.card.loading .eq{display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.del{position:absolute;right:10px;bottom:44px;width:24px;height:24px;border-radius:50%;color:var(--dim);font-size:16px;line-height:1}
+.del:hover{color:#ff8a8a;background:#2a1c22}
+.add{border-style:dashed;align-items:center;justify-content:center;text-align:center;color:var(--mute);min-height:170px}
+.add:hover{color:var(--text);border-color:var(--accent)}
+.add .plus{font-size:30px;line-height:1}
+.empty{color:var(--mute);grid-column:1/-1;padding:10px 2px}
+
+/* range */
+input[type=range]{-webkit-appearance:none;appearance:none;height:22px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(90deg,var(--accent) var(--p,60%),#2a3348 var(--p,60%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;margin-top:-5px;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-track{height:4px;border-radius:4px;background:#2a3348}
+input[type=range]::-moz-range-progress{height:4px;border-radius:4px;background:var(--accent)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:#fff}
+
+/* mixes */
+section.mixes{margin:44px 0 10px;padding:22px;border:1px solid var(--line);border-radius:22px;background:var(--panel)}
+.mixes h2{margin:0 0 4px;font-size:19px}
+.mixes .sub{color:var(--mute);font-size:13.5px;margin:0 0 16px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--card2);border:1px solid var(--line)}
+.chip:hover{border-color:var(--accent)}
+.chip .x{color:var(--dim);margin-left:2px;padding:0 2px}
+.chip .x:hover{color:#ff8a8a}
+.chip.user{background:rgba(154,168,255,.10)}
+.saverow{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.saverow input{flex:1;min-width:200px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);padding:0 14px;font:inherit}
+.saverow input:focus{outline:none;border-color:var(--accent)}
+.btn{height:40px;padding:0 16px;border-radius:12px;background:var(--text);color:var(--bg);font-weight:600}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+footer{color:var(--dim);font-size:13px;padding:26px 0 50px;display:flex;gap:18px;flex-wrap:wrap;justify-content:space-between}
+kbd{font:12px ui-monospace,Consolas,monospace;padding:2px 6px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--mute)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%)}
+@media (max-width:760px){
+  .bar .wrap{height:auto;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+  .master input{width:80px}.status{display:none}
+  .hero h1{font-size:26px}
+}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <div class="brand"><span class="dot"></span>Hush <small>ambient noise mixer</small></div>
+  <span class="status" id="status">Nothing playing</span>
+  <div class="src" id="src" title="Which recordings to use"></div>
+  <div class="ctl master" title="Master volume">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg>
+    <input type="range" id="master" min="0" max="100" value="80" aria-label="Master volume">
+  </div>
+  <div class="tm">
+    <button class="ctl" id="timerBtn" title="Sleep timer">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+      <span id="timerLbl">Timer</span>
+    </button>
+    <div class="menu" id="timerMenu"></div>
+  </div>
+  <button class="ctl" id="randBtn" title="Random mix (R)">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>Shuffle
+  </button>
+  <button class="ctl" id="clearBtn" title="Stop and clear all sounds">Clear</button>
+  <button class="play" id="playBtn" title="Play / pause (Space)" disabled></button>
+</div></div>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Sounds for sleep, focus and calm</h1>
+    <p>Tap sounds to layer them and set each one's volume. Use the switch at the top to hear the studio recordings made with Magnific or the synthesized versions. Everything runs right here in your browser. Nothing to install.</p>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="grid" id="grid"></div>
+
+  <section class="mixes">
+    <h2>Mixes</h2>
+    <p class="sub">Start from a preset, or save what you're playing now. Saved mixes stay in this browser.</p>
+    <div class="chips" id="chips"></div>
+    <div class="saverow">
+      <input id="mixName" placeholder="Name this mix, e.g. Rainy cabin" maxlength="40">
+      <button class="btn" id="saveMix">Save current mix</button>
+      <button class="btn ghost" id="copyLink" title="Copy a link that opens this mix">Copy link</button>
+    </div>
+  </section>
+
+  <footer>
+    <span><kbd>Space</kbd> play / pause &nbsp; <kbd>R</kbd> shuffle &nbsp; <kbd>C</kbd> clear</span>
+    <span>Loops are crossfaded so there's no click or gap. Works in Chrome, Edge, Firefox and Safari.</span>
+    <span>A free tool from <a href="https://tenplusdigital.com" style="color:var(--accent);text-decoration:none">Tenplus Digital</a></span>
+  </footer>
+</div>
+<input type="file" id="file" accept="audio/*" multiple hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   SOUND ENGINE: every sound is rendered offline with the Web Audio API
+   into a loop, then crossfaded at its ends so it repeats seamlessly.
+   ===================================================================== */
+const SR = 44100, TARGET_RMS = 0.11;
+const PI2 = Math.PI / 2;
+
+function fillNoise(type, a){
+  const n = a.length;
+  if(type === 'white'){ for(let i=0;i<n;i++) a[i] = Math.random()*2-1; return; }
+  if(type === 'pink'){
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for(let i=0;i<n;i++){
+      const w = Math.random()*2-1;
+      b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759; b2=0.96900*b2+w*0.1538520;
+      b3=0.86650*b3+w*0.3104856; b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+      a[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11; b6=w*0.115926;
+    } return;
+  }
+  // brown
+  let last = 0;
+  for(let i=0;i<n;i++){ const w=Math.random()*2-1; last=(last+0.02*w)/1.02; a[i]=last*3.5; }
+}
+
+// RBJ biquad coefficients [b0,b1,b2,a1,a2]
+function bq(type,f,Q,sr){
+  const w=2*Math.PI*Math.min(f,sr*0.45)/sr, cs=Math.cos(w), al=Math.sin(w)/(2*Q);
+  let b0,b1,b2; const a0=1+al, a1=-2*cs, a2=1-al;
+  if(type==='lowpass'){ b0=(1-cs)/2; b1=1-cs; b2=(1-cs)/2; }
+  else if(type==='highpass'){ b0=(1+cs)/2; b1=-(1+cs); b2=(1+cs)/2; }
+  else { b0=al; b1=0; b2=-al; } // bandpass (0 dB peak)
+  return [b0/a0,b1/a0,b2/a0,a1/a0,a2/a0];
+}
+function makeKit(c){
+  const sr = c.sampleRate, D = c.length/sr;
+  const R = (a,b)=>a+Math.random()*(b-a);
+  const RI = (a,b)=>Math.floor(a+Math.random()*(b-a+1));
+  const evCache = {};
+  const buf = (type,secs,chans)=>{ const b=c.createBuffer(chans,Math.ceil(secs*sr),sr); for(let ch=0;ch<chans;ch++) fillNoise(type,b.getChannelData(ch)); return b; };
+  const K = {
+    c, D, sr, R, RI,
+    g(v=1){ const n=c.createGain(); n.gain.value=v; return n; },
+    f(type,freq,Q){ const n=c.createBiquadFilter(); n.type=type; n.frequency.value=freq; if(Q!=null) n.Q.value=Q; return n; },
+    p(v){ const n=c.createStereoPanner(); n.pan.value=Math.max(-1,Math.min(1,v)); return n; },
+    o(type,freq,t0=0,t1){ const n=c.createOscillator(); n.type=type; n.frequency.value=freq; n.start(t0); if(t1!=null) n.stop(t1); return n; },
+    ch(...ns){ for(let i=0;i<ns.length-1;i++) ns[i].connect(ns[i+1]); return ns[ns.length-1]; },
+    // full-length stereo noise bed
+    n(type){ const s=c.createBufferSource(); s.buffer=buf(type,D,2); s.start(0); return s; },
+    // mono noise snippet for an event
+    ev(type,t,dur){ const b=evCache[type]||(evCache[type]=buf(type,12,1)); const s=c.createBufferSource(); s.buffer=b;
+      const d=Math.min(dur,b.duration-0.05); s.start(t, R(0,b.duration-d-0.02), d); return s; },
+    // random slow drift of a parameter
+    wob(param,min,max,a,b,t0=0){ let t=t0; param.setValueAtTime(R(min,max),t); while(t<D){ t+=R(a,b); param.linearRampToValueAtTime(R(min,max),t); } },
+    env(param,t,peak,att,dec){ peak=Math.max(peak,0.0002); param.setValueAtTime(0,t); param.linearRampToValueAtTime(peak,t+att);
+      param.exponentialRampToValueAtTime(0.0001,t+att+dec); param.setValueAtTime(0,t+att+dec+0.001); },
+    // filtered noise hit
+    hit(t,dur,dest,{type='white',filt='bandpass',freq=1000,Q=1,gain=1,att=0.001,pan=null}={}){
+      const s=K.ev(type,t,dur+0.02), fl=K.f(filt,freq,Q), gn=K.g(0);
+      K.env(gn.gain,t,gain,att,Math.max(0.002,dur-att)); s.connect(fl).connect(gn);
+      if(pan!=null) gn.connect(K.p(pan)).connect(dest); else gn.connect(dest); return fl; },
+    verb(secs=1.6,decay=3){ const cv=c.createConvolver(), len=Math.ceil(secs*sr), b=c.createBuffer(2,len,sr);
+      for(let ch=0;ch<2;ch++){ const d=b.getChannelData(ch); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay); }
+      cv.buffer=b; return cv; },
+    // fast layer: dense events written straight into a sample buffer (droplets, bubbles, crackles)
+    layer(){
+      const n=Math.ceil(D*sr), Lc=new Float32Array(n), Rc=new Float32Array(n);
+      const put=(s0,i,y,gl,gr)=>{ const k=s0+i; if(k>=0&&k<n){ Lc[k]+=y*gl; Rc[k]+=y*gr; } };
+      const pans=p=>{ const a=(Math.max(-1,Math.min(1,p))+1)*Math.PI/4; return [Math.cos(a)*1.414,Math.sin(a)*1.414]; };
+      return {
+        hit(t,dur,{type='white',filt='bandpass',freq=1000,Q=1,gain=1,att=0.001,pan=0}={}){
+          const c=bq(filt,freq,Q,sr), s0=Math.floor(t*sr), N=Math.max(2,Math.floor(dur*sr)), na=Math.max(1,att*sr), tau=Math.max(1,(N-na)/9.2);
+          const tail=Math.floor(Math.min(0.06,Q/(Math.PI*freq)*6)*sr), [gl,gr]=pans(pan);
+          let x1=0,x2=0,y1=0,y2=0,br=0;
+          for(let i=0;i<N+tail;i++){
+            let x=0; if(i<N){ let w=Math.random()*2-1; if(type==='brown'){ br=(br+0.02*w)/1.02; w=br*3.5; } x=w*(i<na?i/na:Math.exp(-(i-na)/tau)); }
+            const y=c[0]*x+c[1]*x1+c[2]*x2-c[3]*y1-c[4]*y2; x2=x1; x1=x; y2=y1; y1=y; put(s0,i,y*gain,gl,gr);
+          }
+        },
+        chirp(t,dur,f1,f2,gain,pan=0,att=0.002){
+          const s0=Math.floor(t*sr), N=Math.max(2,Math.floor(dur*sr)), na=Math.max(1,att*sr), tau=Math.max(1,(N-na)/9.2), r=Math.log(f2/f1)/N, [gl,gr]=pans(pan);
+          let ph=0; for(let i=0;i<N;i++){ ph+=2*Math.PI*f1*Math.exp(r*i)/sr; put(s0,i,Math.sin(ph)*gain*(i<na?i/na:Math.exp(-(i-na)/tau)),gl,gr); }
+        },
+        to(dest){ const b=c.createBuffer(2,n,sr); b.copyToChannel(Lc,0); b.copyToChannel(Rc,1); const s=c.createBufferSource(); s.buffer=b; s.connect(dest); s.start(0); },
+      };
+    },
+    // Poisson event times
+    times(rate,fn,t0=0,t1=D){ let t=t0; for(;;){ t+=-Math.log(1-Math.random())/rate; if(t>=t1) break; fn(t); } },
+  };
+  return K;
+}
+
+/* ---------- reusable recipes ---------- */
+function rain(K,out,o={}){
+  const {density=26,dropF=[2500,7500],dropQ=[1,4],dropDur=[0.004,0.025],dropGain=0.45,bed=1,low=0.5,muffle=9000,hp=400}=o;
+  const bg=K.g(0.5*bed); K.wob(bg.gain,0.40*bed,0.56*bed,1.5,4);
+  K.ch(K.n('pink'),K.f('highpass',hp),K.f('lowpass',muffle),bg,out);
+  K.ch(K.n('brown'),K.f('lowpass',350),K.g(low),out);
+  const L=K.layer();
+  K.times(density,t=>L.hit(t,K.R(...dropDur),{freq:K.R(...dropF),Q:K.R(...dropQ),gain:dropGain*Math.pow(Math.random(),2)+0.02,pan:K.R(-0.9,0.9)}));
+  L.to(out);
+}
+function thunder(K,out,t){
+  const dur=K.R(6,10), s=K.ev('brown',t,dur), lp=K.f('lowpass',900,0.7), gn=K.g(0), pn=K.p(K.R(-0.5,0.5));
+  lp.frequency.setValueAtTime(K.R(600,1400),t); lp.frequency.exponentialRampToValueAtTime(K.R(110,200),t+K.R(1.5,3));
+  const pk=K.R(2.2,4), a=K.R(0.05,0.5); gn.gain.setValueAtTime(0,t); gn.gain.linearRampToValueAtTime(pk,t+a);
+  let tt=t+a; while(tt<t+dur-0.6){ tt+=K.R(0.12,0.45); const k=Math.exp(-(tt-t)/(dur*0.33)); gn.gain.linearRampToValueAtTime(pk*k*K.R(0.35,1),tt); }
+  gn.gain.linearRampToValueAtTime(0,t+dur);
+  K.ch(s,lp,gn,pn,out);
+  if(Math.random()<0.45) K.hit(t,0.3,out,{freq:2200,Q:0.4,gain:K.R(0.5,0.9),att:0.004,pan:K.R(-0.5,0.5)});
+}
+function wave(K,out,t){
+  const rise=K.R(2.5,4), fall=K.R(4,6.5), dur=rise+fall+0.5, pk=K.R(0.6,1.1), pan=K.p(K.R(-0.35,0.35));
+  pan.connect(out);
+  const s=K.ev('pink',t,dur), lp=K.f('lowpass',300,0.5), gn=K.g(0);
+  lp.frequency.setValueAtTime(250,t); lp.frequency.exponentialRampToValueAtTime(K.R(1800,3200),t+rise); lp.frequency.exponentialRampToValueAtTime(400,t+dur);
+  gn.gain.setValueAtTime(0.0001,t); gn.gain.exponentialRampToValueAtTime(pk,t+rise); gn.gain.setValueAtTime(pk,t+rise+0.3); gn.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  K.ch(s,lp,gn,pan);
+  const b=K.ev('brown',t,dur), bg=K.g(0);
+  bg.gain.setValueAtTime(0.0001,t); bg.gain.exponentialRampToValueAtTime(pk*1.3,t+rise+0.2); bg.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  K.ch(b,K.f('lowpass',500),bg,pan);
+  const w=K.ev('white',t+rise,fall), wg=K.g(0);
+  wg.gain.setValueAtTime(0.0001,t+rise); wg.gain.exponentialRampToValueAtTime(pk*0.12,t+rise+0.4); wg.gain.exponentialRampToValueAtTime(0.0001,t+rise+fall);
+  K.ch(w,K.f('highpass',2500),wg,pan);
+}
+function bird(K,out,t,dist=1){
+  const type=K.RI(0,3), os=K.o('sine',3000,t), gn=K.g(0);
+  K.ch(os,gn,K.f('lowpass',dist<0.6?4200:9000),K.g(dist*K.R(0.4,1)),K.p(K.R(-0.85,0.85)),out);
+  const F=os.frequency, G=gn.gain; let tt=t; G.setValueAtTime(0,t);
+  const note=(f1,f2,d,a=1)=>{ F.setValueAtTime(f1,tt); F.exponentialRampToValueAtTime(f2,tt+d);
+    G.setValueAtTime(0,tt); G.linearRampToValueAtTime(a,tt+Math.min(0.01,d/3)); G.setValueAtTime(a,tt+d*0.7); G.linearRampToValueAtTime(0,tt+d); tt+=d; };
+  const gap=d=>{ tt+=d; };
+  if(type===0){ const n=K.RI(3,6), base=K.R(2200,3800); for(let i=0;i<n;i++){ const f=base*K.R(0.8,1.3); note(f,f*K.R(0.85,1.15),K.R(0.08,0.22),K.R(0.6,1)); gap(K.R(0.04,0.14)); } }
+  else if(type===1){ const n=K.RI(8,20), f=K.R(3500,5500), d=K.R(0.03,0.05); for(let i=0;i<n;i++){ note(f,f*0.75,d*0.8,0.8); gap(d*0.3); } }
+  else if(type===2){ const f=K.R(2500,3500), r=K.RI(1,3); for(let i=0;i<r;i++){ note(f,f*1.4,0.12,1); gap(0.03); note(f*1.4,f*0.9,0.18,0.8); gap(K.R(0.25,0.5)); } }
+  else { const n=K.RI(2,6), f=K.R(4000,6000); for(let i=0;i<n;i++){ note(f,f*0.6,K.R(0.02,0.05),1); gap(K.R(0.06,0.18)); } }
+  os.stop(tt+0.05);
+}
+function birdsBus(K,out,wet=0.25){ const bus=K.g(1), v=K.verb(1.8,4); bus.connect(out); bus.connect(v); v.connect(K.g(wet)).connect(out); return bus; }
+function cricket(K,out,{f,level,pan,lp}){
+  const os=K.o('sine',f), os2=K.o('sine',f*2), gn=K.g(0); os.connect(gn); os2.connect(K.g(0.12)).connect(gn);
+  K.ch(gn,K.f('lowpass',lp),K.g(level),K.p(pan),out);
+  const per=K.R(0.55,1.1), pulses=K.RI(2,4), pl=K.R(0.012,0.02), pg=K.R(0.022,0.035), G=gn.gain;
+  let t=K.R(0,per); G.setValueAtTime(0,0);
+  while(t<K.D){ if(Math.random()<0.93){ for(let i=0;i<pulses;i++){ const s=t+i*(pl+pg);
+    G.setValueAtTime(0,s); G.linearRampToValueAtTime(1,s+0.003); G.linearRampToValueAtTime(0.7,s+pl-0.003); G.linearRampToValueAtTime(0,s+pl); } }
+    t+=per*K.R(0.97,1.03); }
+}
+function peeper(K,out,{level,pan,lp}){
+  const f0=K.R(2600,3100), os=K.o('sine',f0), os2=K.o('sine',f0*2), gn=K.g(0); os.connect(gn); os2.connect(K.g(0.15)).connect(gn);
+  K.ch(gn,K.f('lowpass',lp),K.g(level),K.p(pan),out);
+  const per=K.R(0.8,1.6), len=K.R(0.09,0.15), G=gn.gain; let t=K.R(0,per); G.setValueAtTime(0,0);
+  while(t<K.D){ if(Math.random()<0.9){
+    os.frequency.setValueAtTime(f0*0.9,t); os.frequency.linearRampToValueAtTime(f0*1.06,t+len);
+    os2.frequency.setValueAtTime(f0*1.8,t); os2.frequency.linearRampToValueAtTime(f0*2.12,t+len);
+    G.setValueAtTime(0,t); G.linearRampToValueAtTime(1,t+0.015); G.linearRampToValueAtTime(0.85,t+len-0.02); G.linearRampToValueAtTime(0,t+len); }
+    t+=per*K.R(0.9,1.1); }
+}
+function nightBed(K,out,amt=1){
+  const g=K.g(0.18*amt); K.wob(g.gain,0.1*amt,0.22*amt,2,5); K.ch(K.n('brown'),K.f('lowpass',300),g,out);
+  K.ch(K.n('pink'),K.f('bandpass',1800,0.5),K.g(0.02*amt),out);
+}
+function cicada(K,out,{f,rate,level,pan}){
+  const am=K.g(0.5), sq=K.o('square',rate), sw=K.g(0); sq.connect(K.g(0.5)).connect(am.gain);
+  K.ch(K.n('white'),K.f('bandpass',f,4),am,sw,K.g(level),K.p(pan),out);
+  const G=sw.gain; let t=K.R(0,8); G.setValueAtTime(0,0);
+  while(t<K.D){ const up=K.R(3,7), hold=K.R(4,12), dn=K.R(2,5);
+    G.setValueAtTime(0,t); G.linearRampToValueAtTime(1,t+up); G.setValueAtTime(1,t+up+hold); G.linearRampToValueAtTime(0,t+up+hold+dn); t+=up+hold+dn+K.R(1,8); }
+}
+const VOW=[[730,1090],[270,2290],[530,1840],[570,840],[300,870],[660,1720],[490,1350],[440,1020]];
+function voice(K,bus,{f0,level,pan,lp}){
+  const os=K.o('sawtooth',f0); K.wob(os.frequency,f0*0.8,f0*1.25,0.15,0.5);
+  const f1=K.f('bandpass',500,6), f2=K.f('bandpass',1500,8), mix=K.g(1), amp=K.g(0);
+  os.connect(f1).connect(mix); os.connect(f2).connect(K.g(0.6)).connect(mix);
+  K.ch(mix,amp,K.f('lowpass',lp),K.g(level),K.p(pan),bus);
+  const A=amp.gain; let t=K.R(0,3); A.setValueAtTime(0,0);
+  while(t<K.D){ const end=t+K.R(1.2,4);
+    while(t<end){ const sd=K.R(0.1,0.25), v=VOW[K.RI(0,VOW.length-1)];
+      f1.frequency.setTargetAtTime(v[0],t,0.02); f2.frequency.setTargetAtTime(v[1],t,0.02);
+      A.setTargetAtTime(K.R(0.5,1),t,0.02); A.setTargetAtTime(K.R(0.05,0.2),t+sd*0.6,0.03); t+=sd; }
+    A.setTargetAtTime(0,t,0.05); t+=K.R(0.6,3.5); }
+}
+function clink(K,dest,t){
+  const f=K.R(1800,3400), pn=K.p(K.R(-0.7,0.7)), lv=K.R(0.05,0.14); pn.connect(dest);
+  [[1,1],[2.76,0.5],[5.4,0.3],[8.9,0.15]].filter(([m])=>f*m<19000).forEach(([m,a])=>{ const os=K.o('sine',f*m,t,t+0.7), gn=K.g(0); K.env(gn.gain,t,a*lv,0.001,K.R(0.2,0.5)); K.ch(os,gn,pn); });
+}
+function hum(K,out,f,level){ K.ch(K.o('sine',f),K.g(level),out); }
+
+/* ---------- sound list ---------- */
+const SOUNDS = [
+ // NOISE
+ {id:'white',cat:'noise',ico:'⚪',name:'White noise',desc:'Bright, even hiss across all frequencies',len:16,
+  make:(K,o)=>K.ch(K.n('white'),K.g(0.5),o)},
+ {id:'pink',cat:'noise',ico:'🌸',name:'Pink noise',desc:'Softer and more balanced than white',len:16,
+  make:(K,o)=>K.ch(K.n('pink'),o)},
+ {id:'brown',cat:'noise',ico:'🟤',name:'Brown noise',desc:'Deep, rumbling and warm',len:16,
+  make:(K,o)=>K.ch(K.n('brown'),o)},
+ {id:'smooth',cat:'noise',ico:'🍫',name:'Smoothed brown',desc:'Brown noise with the edges rounded off',len:16,
+  make:(K,o)=>K.ch(K.n('brown'),K.f('lowpass',380,0.5),K.f('lowpass',500,0.5),o)},
+ {id:'deep',cat:'noise',ico:'🌑',name:'Deep brown',desc:'Very low, felt more than heard',len:16,
+  make:(K,o)=>K.ch(K.n('brown'),K.f('lowpass',120,0.6),K.f('lowpass',160,0.6),o)},
+ {id:'grey',cat:'noise',ico:'🌫️',name:'Grey noise',desc:'Tuned to sound equally loud at every pitch',len:16,
+  make:(K,o)=>{ const ls=K.f('lowshelf',180), dip=K.f('peaking',3200,0.9), hs=K.f('highshelf',9000);
+    ls.gain.value=10; dip.gain.value=-6; hs.gain.value=4; K.ch(K.n('pink'),ls,dip,hs,o); }},
+
+ // NATURE
+ {id:'rain',cat:'nature',ico:'🌧️',name:'Rain',desc:'Steady rainfall with close droplets',len:40,
+  make:(K,o)=>rain(K,o)},
+ {id:'storm',cat:'nature',ico:'⛈️',name:'Thunderstorm',desc:'Heavy rain with rolling thunder',len:72,
+  make:(K,o)=>{ rain(K,o,{density:30,bed:1.35,low:0.9}); let t=K.R(2,6); while(t<K.D-4){ thunder(K,o,t); t+=K.R(13,24);} }},
+ {id:'window',cat:'nature',ico:'🪟',name:'Rain on a window',desc:'Muffled rain tapping on glass',len:40,
+  make:(K,o)=>rain(K,o,{density:16,dropF:[900,3200],dropQ:[4,10],dropDur:[0.01,0.045],dropGain:0.9,bed:0.75,muffle:2300,hp:200,low:0.6})},
+ {id:'walk',cat:'nature',ico:'🚶',name:'Walking in the rain',desc:'Footsteps through puddles under rain',len:40,
+  make:(K,o)=>{ rain(K,o,{bed:0.8,density:20}); let t=0.2, side=1;
+    while(t<K.D){ const p=side*0.15; K.hit(t,0.09,o,{type:'brown',filt:'lowpass',freq:260,Q:1,gain:K.R(1.6,2.2),att:0.004,pan:p});
+      K.hit(t+0.02,K.R(0.12,0.2),o,{filt:'bandpass',freq:K.R(1300,2200),Q:0.8,gain:K.R(0.25,0.45),att:0.01,pan:p});
+      side=-side; t+=K.R(0.52,0.6); } }},
+ {id:'wind',cat:'nature',ico:'🌬️',name:'Wind',desc:'Gusts that rise and fall',len:45,
+  make:(K,o)=>{ [-0.5,0.5].forEach(p=>{ const bp=K.f('bandpass',500,1), g=K.g(0.5); K.wob(bp.frequency,250,900,2,5); K.wob(bp.Q,0.6,1.6,2,5); K.wob(g.gain,0.15,1,2,6);
+      K.ch(K.n('pink'),bp,g,K.p(p),o); });
+    const lg=K.g(0.3); K.wob(lg.gain,0.1,0.4,2,5); K.ch(K.n('brown'),K.f('lowpass',200),lg,o);
+    const wh=K.f('bandpass',900,14), wg=K.g(0); K.wob(wh.frequency,600,1400,2,5); K.wob(wg.gain,0,0.35,2,6); K.ch(K.n('white'),wh,wg,o); }},
+ {id:'ocean',cat:'nature',ico:'🌊',name:'Ocean waves',desc:'Waves rolling in and washing back',len:60,
+  make:(K,o)=>{ K.ch(K.n('brown'),K.f('lowpass',300),K.g(0.35),o); let t=0; while(t<K.D){ wave(K,o,t); t+=K.R(5.5,9); } }},
+ {id:'brook',cat:'nature',ico:'🏞️',name:'Babbling brook',desc:'Shallow water over stones',len:30,
+  make:(K,o)=>{ K.ch(K.n('pink'),K.f('bandpass',1500,0.5),K.g(0.3),o); K.ch(K.n('white'),K.f('highpass',4000),K.g(0.03),o);
+    const L=K.layer(); K.times(60,t=>{ const f=K.R(350,1600)*(Math.random()<0.2?1.8:1);
+      L.chirp(t,K.R(0.015,0.07),f,f*K.R(1.3,2.2),K.R(0.04,0.3),K.R(-0.7,0.7)); }); L.to(o); }},
+ {id:'waterfall',cat:'nature',ico:'💧',name:'Waterfall',desc:'Powerful falling water',len:24,
+  make:(K,o)=>{ const g=K.g(1); K.wob(g.gain,0.9,1,1,3); g.connect(o);
+    K.ch(K.n('pink'),K.f('highpass',150),K.g(0.7),g); K.ch(K.n('white'),K.f('lowpass',5500),K.g(0.18),g); K.ch(K.n('brown'),K.f('lowpass',250),K.g(0.6),g); }},
+ {id:'fire',cat:'nature',ico:'🔥',name:'Fireplace',desc:'Crackling logs and a soft roar',len:40,
+  make:(K,o)=>{ const rg=K.g(0.5); K.wob(rg.gain,0.25,0.6,0.3,1.5); K.ch(K.n('brown'),K.f('lowpass',180),rg,o);
+    const hg=K.g(0.04); K.wob(hg.gain,0.015,0.07,0.3,1.2); K.ch(K.n('pink'),K.f('highpass',2500),hg,o);
+    const L=K.layer();
+    K.times(3,c=>{ const n=K.RI(1,8); let t=c; for(let i=0;i<n;i++){ L.hit(t,K.R(0.0008,0.004),{filt:'highpass',freq:K.R(1500,4000),Q:0.7,gain:Math.pow(Math.random(),1.5)*0.55+0.03,pan:K.R(-0.6,0.6)}); t+=K.R(0.005,0.06);} });
+    K.times(0.35,t=>L.hit(t,K.R(0.015,0.04),{filt:'bandpass',freq:K.R(400,1200),Q:1,gain:K.R(0.35,0.7),pan:K.R(-0.4,0.4)})); L.to(o); }},
+ {id:'crickets',cat:'nature',ico:'🦗',name:'Night crickets',desc:'A field of crickets after dark',len:40,
+  make:(K,o)=>{ nightBed(K,o); for(let i=0;i<5;i++) cricket(K,o,{f:K.R(4200,5200),level:K.R(0.25,0.7),pan:K.R(-0.8,0.8),lp:9000});
+    for(let i=0;i<10;i++) cricket(K,o,{f:K.R(4000,5400),level:K.R(0.05,0.15),pan:K.R(-1,1),lp:5000}); }},
+ {id:'peepers',cat:'nature',ico:'🐸',name:'Spring peepers',desc:'Tiny frogs calling from a pond',len:40,
+  make:(K,o)=>{ nightBed(K,o); for(let i=0;i<16;i++){ const d=Math.random(); peeper(K,o,{level:0.08+0.5*d*d,pan:K.R(-0.9,0.9),lp:4000+6000*d}); } }},
+ {id:'cicadas',cat:'nature',ico:'☀️',name:'Cicadas',desc:'Buzzing on a hot summer afternoon',len:60,
+  make:(K,o)=>{ const g=K.g(0.15); K.wob(g.gain,0.1,0.2,2,5); K.ch(K.n('white'),K.f('bandpass',5500,2),g,o);
+    for(let i=0;i<5;i++) cicada(K,o,{f:K.R(4500,7000),rate:K.R(90,180),level:K.R(0.3,1),pan:K.R(-0.8,0.8)}); }},
+ {id:'birds',cat:'nature',ico:'🐦',name:'Morning birds',desc:'Dawn chorus in the garden',len:45,
+  make:(K,o)=>{ const g=K.g(0.03); K.wob(g.gain,0.01,0.05,1,3); K.ch(K.n('pink'),K.f('bandpass',3000,0.5),g,o);
+    const bus=birdsBus(K,o); K.times(1.1,t=>bird(K,bus,t,Math.random()<0.4?K.R(0.25,0.5):K.R(0.6,1))); }},
+ {id:'forest',cat:'nature',ico:'🌲',name:'Forest',desc:'Leaves in the breeze, distant birds',len:50,
+  make:(K,o)=>{ const lg=K.g(0.15); K.wob(lg.gain,0.04,0.28,0.6,3); K.ch(K.n('pink'),K.f('highpass',1200),K.f('lowpass',6500),lg,o);
+    const wg=K.g(0.2); K.wob(wg.gain,0.08,0.3,2,5); K.ch(K.n('brown'),K.f('lowpass',220),wg,o);
+    const bus=birdsBus(K,o,0.35); K.times(0.25,t=>bird(K,bus,t,K.R(0.15,0.45))); }},
+
+ // INDOOR
+ {id:'cafe',cat:'indoor',ico:'☕',name:'Café',desc:'Indistinct chatter and clinking cups',len:40,
+  make:(K,o)=>{ const room=K.g(1), v=K.verb(1.3,3); room.connect(K.g(0.45)).connect(o); room.connect(v); v.connect(K.g(0.5)).connect(o);
+    for(let i=0;i<11;i++){ const near=i<4; voice(K,room,{f0:Math.random()<0.5?K.R(95,140):K.R(170,240),level:near?K.R(0.35,0.6):K.R(0.12,0.25),pan:K.R(-0.9,0.9),lp:near?2400:1300}); }
+    K.times(0.35,t=>clink(K,room,t)); K.ch(K.n('brown'),K.f('lowpass',400),K.g(0.25),o); K.ch(K.n('pink'),K.f('lowpass',1200),K.g(0.06),o); }},
+ {id:'library',cat:'indoor',ico:'📚',name:'Library',desc:'Quiet room, the odd page turning',len:45,level:0.6,
+  make:(K,o)=>{ K.ch(K.n('brown'),K.f('lowpass',300),K.g(0.5),o); K.ch(K.n('pink'),K.f('lowpass',1500),K.g(0.08),o);
+    const room=K.g(1), v=K.verb(1.5,3); room.connect(o); room.connect(v); v.connect(K.g(0.35)).connect(o);
+    K.times(1/7,t=>{ const s=K.ev('pink',t,0.45), bp=K.f('bandpass',2000,0.7), gn=K.g(0);
+      bp.frequency.setValueAtTime(1500,t); bp.frequency.linearRampToValueAtTime(3500,t+0.12); bp.frequency.linearRampToValueAtTime(1800,t+0.4);
+      gn.gain.setValueAtTime(0,t); gn.gain.linearRampToValueAtTime(K.R(0.5,0.9),t+0.1); gn.gain.linearRampToValueAtTime(0,t+0.42); K.ch(s,bp,gn,K.p(K.R(-0.6,0.6)),room); });
+    K.times(1/20,t=>K.hit(t,0.12,room,{type:'brown',filt:'lowpass',freq:220,Q:1,gain:0.9,pan:K.R(-0.6,0.6)})); }},
+ {id:'ac',cat:'indoor',ico:'❄️',name:'Air conditioner',desc:'Steady cool airflow with a low hum',len:20,
+  make:(K,o)=>{ K.ch(K.n('brown'),K.f('lowpass',800),K.g(0.7),o); const pg=K.g(0.25); K.wob(pg.gain,0.22,0.28,1,3);
+    K.ch(K.n('pink'),K.f('highpass',200),K.f('lowpass',3000),pg,o); hum(K,o,60,0.02); hum(K,o,120,0.035); }},
+ {id:'fan',cat:'indoor',ico:'🌀',name:'Bathroom fan',desc:'Whirring extractor fan',len:20,
+  make:(K,o)=>{ K.ch(K.n('pink'),K.f('bandpass',500,0.6),K.g(0.8),o); K.ch(K.n('brown'),K.f('lowpass',300),K.g(0.4),o);
+    K.ch(K.o('sawtooth',90),K.f('lowpass',260),K.g(0.06),o); hum(K,o,120,0.03); }},
+ {id:'dryer',cat:'indoor',ico:'👕',name:'Clothes dryer',desc:'Tumbling drum and warm air',len:40,
+  make:(K,o)=>{ K.ch(K.n('brown'),K.f('lowpass',200),K.g(0.7),o); K.ch(K.n('pink'),K.f('lowpass',1500),K.g(0.2),o); hum(K,o,55,0.04); hum(K,o,110,0.025);
+    let t=0.3; while(t<K.D){ const n=K.RI(1,3); for(let i=0;i<n;i++) K.hit(t+i*K.R(0.08,0.2),0.12,o,{type:'brown',filt:'lowpass',freq:K.R(90,180),Q:2,gain:K.R(1.5,3),att:0.006});
+      if(Math.random()<0.25) K.hit(t+0.3,0.01,o,{freq:3000,Q:8,gain:0.5}); t+=K.R(1.05,1.55); } }},
+ {id:'washer',cat:'indoor',ico:'🫧',name:'Washing machine',desc:'Sloshing water and agitation',len:35,
+  make:(K,o)=>{ hum(K,o,70,0.04); const sg=K.g(0.3); K.wob(sg.gain,0.15,0.4,0.5,2); K.ch(K.n('brown'),K.f('lowpass',400),sg,o);
+    let i=0; for(let t=0;t<K.D;t+=1.25,i++){ const s=K.ev('pink',t,1.1), bp=K.f('bandpass',400,1), gn=K.g(0);
+      bp.frequency.setValueAtTime(400,t); bp.frequency.linearRampToValueAtTime(950,t+0.5); bp.frequency.linearRampToValueAtTime(380,t+1.1);
+      gn.gain.setValueAtTime(0,t); gn.gain.linearRampToValueAtTime(1.2,t+0.35); gn.gain.linearRampToValueAtTime(0,t+1.1); K.ch(s,bp,gn,K.p(i%2?0.3:-0.3),o); } }},
+ {id:'hairdryer',cat:'indoor',ico:'💨',name:'Hair dryer',desc:'Strong rushing air and motor',len:20,
+  make:(K,o)=>{ K.ch(K.n('white'),K.f('bandpass',3500,0.5),K.g(0.6),o); K.ch(K.n('pink'),K.f('lowpass',2000),K.g(0.5),o);
+    const m=K.o('sawtooth',210); K.wob(m.frequency,207,213,0.5,2); K.ch(m,K.f('lowpass',1200),K.g(0.04),o); hum(K,o,420,0.015); }},
+ {id:'vacuum',cat:'indoor',ico:'🧹',name:'Vacuum cleaner',desc:'Loud suction and a high whine',len:20,
+  make:(K,o)=>{ K.ch(K.n('white'),K.f('highpass',800),K.f('lowpass',9000),K.g(0.5),o); K.ch(K.n('pink'),K.f('bandpass',1200,1),K.g(0.5),o);
+    K.ch(K.n('brown'),K.f('lowpass',300),K.g(0.3),o); const w=K.o('sawtooth',780); K.wob(w.frequency,770,792,0.5,2); K.ch(w,K.f('bandpass',1600,3),K.g(0.05),o); hum(K,o,1560,0.012); }},
+
+ // TRAVEL
+ {id:'car',cat:'travel',ico:'🚗',name:'Car ride',desc:'Road rumble from the back seat',len:40,
+  make:(K,o)=>{ K.ch(K.n('brown'),K.f('lowpass',180),K.g(0.9),o); const tg=K.g(0.3); K.wob(tg.gain,0.22,0.4,1,4); K.ch(K.n('pink'),K.f('bandpass',500,0.5),tg,o);
+    const e=K.o('sawtooth',38); K.wob(e.frequency,34,44,2,6); K.ch(e,K.f('lowpass',140),K.g(0.12),o); K.ch(K.n('pink'),K.f('highpass',1500),K.g(0.05),o);
+    K.times(0.25,t=>K.hit(t,0.15,o,{type:'brown',filt:'lowpass',freq:110,Q:1,gain:K.R(0.8,1.6),att:0.01})); }},
+ {id:'plane',cat:'travel',ico:'✈️',name:'Airplane cabin',desc:'Steady jet engine drone at cruise',len:24,
+  make:(K,o)=>{ K.ch(K.n('brown'),K.f('lowpass',400),K.g(0.9),o); K.ch(K.n('pink'),K.f('lowpass',1200),K.f('highpass',100),K.g(0.5),o);
+    K.ch(K.n('white'),K.f('lowpass',4000),K.g(0.04),o); const a=K.o('sine',155); K.wob(a.frequency,153,157,3,8); K.ch(a,K.g(0.015),o); hum(K,o,310,0.006); }},
+ {id:'train',cat:'travel',ico:'🚆',name:'Train ride',desc:'Clickety-clack over the rails',len:1.8*20,
+  make:(K,o)=>{ K.ch(K.n('brown'),K.f('lowpass',250),K.g(0.75),o); K.ch(K.n('pink'),K.f('bandpass',700,0.7),K.g(0.22),o);
+    for(let t=0;t<K.D;t+=1.8) [0,0.13,0.85,0.98].forEach((d,i)=>{ const tt=t+d, a=i%2?0.8:1;
+      K.hit(tt,0.06,o,{type:'brown',filt:'bandpass',freq:300,Q:1.5,gain:2.4*a,att:0.003}); K.hit(tt,0.02,o,{freq:2500,Q:6,gain:0.18*a}); });
+    const sq=K.o('sine',2800), sg=K.g(0); K.wob(sq.frequency,2750,2850,0.2,0.6); sg.gain.setValueAtTime(0,0); sg.gain.setValueAtTime(0,12);
+    sg.gain.linearRampToValueAtTime(0.012,14); sg.gain.linearRampToValueAtTime(0,16.5); K.ch(sq,sg,o); }},
+
+ // OTHER
+ {id:'heart',cat:'other',ico:'❤️',name:'Heartbeat',desc:'Slow, steady resting pulse',len:(60/62)*31,
+  make:(K,o)=>{ K.ch(K.n('brown'),K.f('lowpass',120),K.g(0.06),o); const per=60/62, lp=K.f('lowpass',220); lp.connect(o);
+    const beat=(t,a,fm)=>{ const os=K.o('sine',55*fm,t,t+0.3); os.frequency.setValueAtTime(62*fm,t); os.frequency.exponentialRampToValueAtTime(32*fm,t+0.15);
+      const gn=K.g(0); K.env(gn.gain,t,a,0.008,0.17); K.ch(os,gn,lp); K.hit(t,0.09,lp,{type:'brown',filt:'lowpass',freq:120,Q:1,gain:a*1.5,att:0.005}); };
+    for(let t=0;t<K.D;t+=per){ beat(t,1,1); beat(t+0.28,0.65,1.2); } }},
+];
+const CATS=[['all','All'],['noise','Noise'],['nature','Nature'],['indoor','Indoor'],['travel','Travel'],['other','Other'],['mine','My sounds']];
+const PRESETS=[
+  {name:'Rainy cabin',mix:{rain:60,fire:55}},
+  {name:'Deep focus',mix:{smooth:65,cafe:30}},
+  {name:'Beach at night',mix:{ocean:65,crickets:30}},
+  {name:'Thunder nap',mix:{storm:60,brown:30}},
+  {name:'Summer forest',mix:{forest:55,birds:40,brook:35,cicadas:20}},
+  {name:'Night flight',mix:{plane:70,deep:35}},
+  {name:'Study hall',mix:{library:60,pink:25,window:35}},
+];
+
+/* seamless loop: drop the pre-roll, then crossfade the tail into the head */
+function seamless(buf,P,L,X,level){
+  const sr=buf.sampleRate, n=Math.round(L*sr), x=Math.min(Math.round(X*sr),Math.floor(n/2)), p=Math.round(P*sr);
+  const res=new AudioBuffer({length:n,numberOfChannels:2,sampleRate:sr});
+  let sum=0, peak=1e-9;
+  for(let ch=0;ch<2;ch++){
+    const a=buf.getChannelData(Math.min(ch,buf.numberOfChannels-1)), o=res.getChannelData(ch);
+    for(let i=0;i<n;i++){
+      let v=a[p+i];
+      if(i<x){ const t=i/x; v=v*Math.sin(t*PI2)+a[p+n+i]*Math.cos(t*PI2); }
+      o[i]=v; sum+=v*v; const av=v<0?-v:v; if(av>peak) peak=av;
+    }
+  }
+  // loudness: aim every sound at the same RMS; keep the 99.9th-percentile level under 0.85,
+  // and soft-limit the rare transients above that instead of turning the whole sound down
+  const rms=Math.sqrt(sum/(2*n))||1e-9, samp=[];
+  for(let ch=0;ch<2;ch++){ const o=res.getChannelData(ch); for(let i=0;i<n;i+=37) samp.push(Math.abs(o[i])); }
+  samp.sort((a,b)=>a-b); const p999=samp[Math.floor(samp.length*0.999)]||peak;
+  const gain=Math.min(TARGET_RMS*(level||1)/rms, 0.85/p999, 120);
+  const T=0.8, K=0.19; let outPeak=0, outSum=0;
+  for(let ch=0;ch<2;ch++){ const o=res.getChannelData(ch); for(let i=0;i<n;i++){ let v=o[i]*gain; const a=v<0?-v:v;
+    if(a>T){ const w=T+K*Math.tanh((a-T)/K); v=v<0?-w:w; } o[i]=v; outSum+=v*v; const b=v<0?-v:v; if(b>outPeak) outPeak=b; } }
+  res._stats={rms:Math.sqrt(outSum/(2*n)),peak:outPeak,gain};
+  return res;
+}
+async function renderSound(def){
+  const P=1.5, X=3, L=def.len||20;
+  const oc=new OfflineAudioContext(2,Math.ceil((P+L+X+0.05)*SR),SR);
+  const K=makeKit(oc), out=oc.createGain(); out.connect(oc.destination);
+  def.make(K,out);
+  const b=await oc.startRendering();
+  return seamless(b,P,L,X,def.level);
+}
+
+/* ---------- custom sounds (stored in IndexedDB) ---------- */
+const DB={
+  db:null,
+  open(){ return new Promise((res,rej)=>{ try{ const r=indexedDB.open('hush-noise',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('sounds',{keyPath:'id'}); r.onsuccess=()=>{this.db=r.result;res(true)}; r.onerror=()=>rej(r.error);}catch(e){rej(e)} }); },
+  tx(mode){ return this.db.transaction('sounds',mode).objectStore('sounds'); },
+  all(){ return new Promise(res=>{ if(!this.db) return res([]); const r=this.tx('readonly').getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>res([]); }); },
+  put(v){ return new Promise(res=>{ if(!this.db) return res(); const r=this.tx('readwrite').put(v); r.onsuccess=r.onerror=()=>res(); }); },
+  del(id){ return new Promise(res=>{ if(!this.db) return res(); const r=this.tx('readwrite').delete(id); r.onsuccess=r.onerror=()=>res(); }); },
+};
+async function renderCustom(def){
+  const ab=await def.blob.arrayBuffer();
+  const b=await new OfflineAudioContext(2,1,SR).decodeAudioData(ab);
+  const dur=b.duration, X=Math.min(2,dur/4);
+  return seamless(b,0,dur-X,X,0.9);
+}
+
+/* ---------- recorded sounds (Magnific) ----------
+   Stored next to this page as sounds/<source>/<id>.js so they load from disk
+   with no server (browsers block fetch() on file:// pages, but allow <script>). */
+const RECORDED={
+  magnific:['cafe','rain','storm','window','walk','brook','waterfall','ocean','ac','fan','dryer','washer','hairdryer','vacuum','car','plane','train',
+            'wind','fire','crickets','peepers','cicadas','birds','forest','library','heart'],
+};
+const SOURCES=[['magnific','Magnific'],['synth','Synth']];
+const REC_LEVEL={library:0.6,heart:0.8};
+const audioData={}, scriptLoads={};
+window.HUSH_AUDIO=(key,b64)=>{ audioData[key]=b64; };
+function loadScript(src){ return scriptLoads[src]||(scriptLoads[src]=new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src;
+  s.onload=()=>{ s.remove(); res(); }; s.onerror=()=>{ s.remove(); delete scriptLoads[src]; rej(new Error('missing '+src)); }; document.head.appendChild(s); })); }
+async function renderRecorded(src,id){
+  const key=src+'/'+id; if(!audioData[key]){ delete scriptLoads['sounds/'+key+'.js']; await loadScript('sounds/'+key+'.js'); }
+  const bin=atob(audioData[key]), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); delete audioData[key];
+  const b=await new OfflineAudioContext(2,1,SR).decodeAudioData(u.buffer);
+  const X=Math.min(0.35,b.duration/8); return seamless(b,0,b.duration-X,X,REC_LEVEL[id]||0.95);
+}
+
+/* =====================================================================
+   PLAYER
+   ===================================================================== */
+let ctx=null, masterGain=null;
+const cache=new Map(), pending=new Map(), voices=new Map();
+const state={ sel:{}, playing:false, cat:'all', timerLeft:0, timerTotal:0, source:(()=>{ try{ const v=localStorage.getItem('hush-source'); return v==='synth'?'synth':'magnific'; }catch(e){ return 'magnific'; } })() };
+const sourceFor=id=>{ const s=state.source; return (s!=='synth' && RECORDED[s] && RECORDED[s].includes(id)) ? s : 'synth'; };
+const keyFor=id=>id.startsWith('u_')?id:sourceFor(id)+':'+id;
+const custom=[];
+const $=s=>document.querySelector(s);
+const byId=id=>SOUNDS.find(s=>s.id===id)||custom.find(s=>s.id===id);
+const volCurve=v=>Math.pow(v/100,2);
+
+function ensureCtx(){
+  if(!ctx){
+    ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'playback'});
+    masterGain=ctx.createGain(); masterGain.gain.value=volCurve(+$('#master').value);
+    const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-8; comp.knee.value=8; comp.ratio.value=6; comp.attack.value=0.005; comp.release.value=0.25;
+    masterGain.connect(comp).connect(ctx.destination);
+  }
+  return ctx;
+}
+function getBuffer(id){
+  const key=keyFor(id), src=sourceFor(id);
+  if(cache.has(key)) return Promise.resolve(cache.get(key));
+  if(pending.has(key)) return pending.get(key);
+  const def=byId(id); if(!def) return Promise.reject(new Error('unknown sound'));
+  const job=def.blob?renderCustom(def):src!=='synth'?renderRecorded(src,id).catch(e=>{ console.warn(e); return renderSound(def); }):renderSound(def);
+  const pr=job.then(b=>{cache.set(key,b);pending.delete(key);return b;}).catch(e=>{pending.delete(key);throw e;});
+  pending.set(key,pr); return pr;
+}
+async function startVoice(id){
+  if(voices.has(id)) return;
+  const card=cardEl(id), token={}; voices.set(id,token);
+  if(!cache.has(keyFor(id))) card&&card.classList.add('loading');
+  let buf; try{ buf=await getBuffer(id); }catch(e){ console.error(e); if(voices.get(id)===token) voices.delete(id); card&&card.classList.remove('loading'); toast('Could not load that sound'); delete state.sel[id]; refresh(); return; }
+  card&&card.classList.remove('loading');
+  if(!(id in state.sel) || voices.get(id)!==token){ if(voices.get(id)===token) voices.delete(id); return; }
+  const src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+  const g=ctx.createGain(); g.gain.value=0; src.connect(g).connect(masterGain);
+  src.start(0,Math.random()*buf.duration);
+  g.gain.setTargetAtTime(volCurve(state.sel[id]),ctx.currentTime,0.35);
+  voices.set(id,{src,g}); refresh();
+}
+function stopVoice(id){
+  const v=voices.get(id); voices.delete(id);
+  if(v&&v.src){ const t=ctx.currentTime; v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(0,t,0.12); v.src.stop(t+0.8); }
+}
+function play(){
+  if(!Object.keys(state.sel).length) return;
+  ensureCtx(); ctx.resume(); state.playing=true;
+  masterGain.gain.cancelScheduledValues(ctx.currentTime); masterGain.gain.setTargetAtTime(volCurve(+$('#master').value),ctx.currentTime,0.05);
+  Object.keys(state.sel).forEach(startVoice); refresh();
+}
+function pause(){ if(ctx) ctx.suspend(); state.playing=false; refresh(); }
+function toggle(id){
+  if(id in state.sel){ delete state.sel[id]; if(ctx) stopVoice(id); if(!Object.keys(state.sel).length) pause(); }
+  else { state.sel[id]=60; if(state.playing) startVoice(id); else play(); }
+  refresh(); syncHash();
+}
+function setVol(id,v){
+  if(!(id in state.sel)){ state.sel[id]=v; if(state.playing) startVoice(id); else play(); }
+  state.sel[id]=v; const vc=voices.get(id); if(vc) vc.g.gain.setTargetAtTime(volCurve(v),ctx.currentTime,0.05);
+  refresh(); syncHash();
+}
+function loadMix(mix,autoplay=true){
+  Object.keys(state.sel).forEach(id=>{ if(ctx) stopVoice(id); });
+  state.sel={}; Object.entries(mix).forEach(([id,v])=>{ if(byId(id)) state.sel[id]=+v; });
+  if(autoplay){ if(state.playing) Object.keys(state.sel).forEach(startVoice); else play(); }
+  refresh(); syncHash();
+}
+function clearAll(){ Object.keys(state.sel).forEach(id=>{ if(ctx) stopVoice(id); }); state.sel={}; pause(); syncHash(); }
+function shuffle(){
+  const pool=SOUNDS.filter(s=>s.cat!=='indoor'||Math.random()<0.4), pick={}, n=2+Math.floor(Math.random()*2);
+  const bed=SOUNDS.filter(s=>s.cat==='noise'); pick[bed[Math.floor(Math.random()*bed.length)].id]=20+Math.floor(Math.random()*20);
+  while(Object.keys(pick).length<n+1){ const s=pool[Math.floor(Math.random()*pool.length)]; if(!(s.id in pick)) pick[s.id]=40+Math.floor(Math.random()*35); }
+  loadMix(pick); toast('Shuffled a new mix');
+}
+
+/* ---------- timer ---------- */
+const TIMES=[0,15,30,45,60,90,120,240];
+let tick=null;
+function setTimer(min){
+  state.timerTotal=min*60; state.timerLeft=min*60; clearInterval(tick); tick=null;
+  if(min){ tick=setInterval(()=>{ if(!state.playing) return; state.timerLeft--;
+      if(state.timerLeft===20 && ctx) masterGain.gain.setTargetAtTime(0,ctx.currentTime,6);
+      if(state.timerLeft<=0){ clearInterval(tick); tick=null; state.timerTotal=0; pause(); toast('Sleep timer finished'); }
+      refreshTimer(); },1000); }
+  refreshTimer(); buildTimerMenu();
+}
+function refreshTimer(){
+  const l=$('#timerLbl'), b=$('#timerBtn');
+  if(state.timerTotal){ const s=Math.max(0,state.timerLeft), h=Math.floor(s/3600), m=Math.floor(s%3600/60), ss=s%60;
+    l.textContent=(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(ss).padStart(2,'0'); b.classList.add('on'); }
+  else { l.textContent='Timer'; b.classList.remove('on'); }
+}
+function buildTimerMenu(){
+  const m=$('#timerMenu'); m.innerHTML='';
+  TIMES.forEach(t=>{ const b=document.createElement('button'); b.textContent=t?(t<60?t+' minutes':(t/60)+(t===60?' hour':' hours')):'Off';
+    if((state.timerTotal/60)===t && (t||!state.timerTotal)) b.className='sel';
+    b.onclick=()=>{ setTimer(t); m.classList.remove('open'); if(t) toast('Fades out in '+b.textContent); }; m.appendChild(b); });
+}
+
+/* ---------- UI ---------- */
+function cardEl(id){ return document.querySelector('.card[data-id="'+CSS.escape(id)+'"]'); }
+function paintRange(r){ r.style.setProperty('--p',r.value+'%'); }
+function buildTabs(){
+  const t=$('#tabs'); t.innerHTML='';
+  CATS.forEach(([k,label])=>{ const n=k==='all'?SOUNDS.length+custom.length:k==='mine'?custom.length:SOUNDS.filter(s=>s.cat===k).length;
+    const b=document.createElement('button'); b.className='tab'+(state.cat===k?' on':''); b.innerHTML=label+'<span class="n">'+n+'</span>';
+    b.onclick=()=>{ state.cat=k; buildTabs(); buildGrid(); }; t.appendChild(b); });
+}
+function makeCard(def){
+  const c=document.createElement('div'); c.className='card'; c.dataset.id=def.id;
+  c.innerHTML='<span class="eq"><i></i><i></i><i></i></span><span class="spin"></span>'+
+    '<button class="tap"><span class="ico"></span><span class="name"></span><span class="desc"></span></button>'+
+    '<input type="range" class="vol" min="0" max="100" aria-label="Volume">';
+  c.querySelector('.ico').textContent=def.ico; c.querySelector('.name').textContent=def.name; c.querySelector('.desc').textContent=def.desc;
+  c.querySelector('.tap').onclick=()=>toggle(def.id);
+  const ic=c.querySelector('.ico'), im=new Image(); im.alt=''; im.decoding='async'; im.src='icons/'+(def.blob?'mine':def.id)+'.jpg';
+  im.onload=()=>{ ic.textContent=''; ic.appendChild(im); };
+  if(!def.blob){ const bd=document.createElement('span'); bd.className='badge'; c.appendChild(bd); }
+  const r=c.querySelector('.vol'); r.value=state.sel[def.id]??60; paintRange(r);
+  r.oninput=()=>{ paintRange(r); setVol(def.id,+r.value); };
+  if(def.blob){ const d=document.createElement('button'); d.className='del'; d.title='Remove this sound'; d.textContent='×';
+    d.onclick=async e=>{ e.stopPropagation(); if(def.id in state.sel) toggle(def.id); cache.delete(def.id); custom.splice(custom.indexOf(def),1); await DB.del(def.id); buildTabs(); buildGrid(); }; c.appendChild(d); }
+  return c;
+}
+function buildGrid(){
+  const g=$('#grid'); g.innerHTML='';
+  let list=state.cat==='all'?[...SOUNDS,...custom]:state.cat==='mine'?custom:SOUNDS.filter(s=>s.cat===state.cat);
+  list.forEach(d=>g.appendChild(makeCard(d)));
+  if(state.cat==='mine'||state.cat==='all'){
+    const a=document.createElement('button'); a.className='card add';
+    a.innerHTML='<span class="plus">+</span><span class="name">Add your own sound</span><span class="desc">MP3, WAV, M4A or OGG from your computer. It loops seamlessly and is kept in this browser.</span>';
+    a.onclick=()=>$('#file').click(); g.appendChild(a);
+  }
+  refresh();
+}
+function refresh(){
+  document.querySelectorAll('.card[data-id]').forEach(c=>{ const id=c.dataset.id, on=id in state.sel;
+    c.classList.toggle('on',on); c.classList.toggle('live',on&&state.playing&&!!(voices.get(id)&&voices.get(id).src));
+    const bd=c.querySelector('.badge'); if(bd){ const sv=sourceFor(id); bd.textContent=SOURCES.find(x=>x[0]===sv)[1]; bd.className='badge '+sv; }
+    const r=c.querySelector('.vol'); if(on&&+r.value!==state.sel[id]){ r.value=state.sel[id]; paintRange(r); } });
+  const n=Object.keys(state.sel).length, pb=$('#playBtn');
+  pb.disabled=!n; pb.innerHTML=state.playing
+    ?'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>'
+    :'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  $('#status').textContent=!n?'Nothing playing':(state.playing?'Playing ':'Paused · ')+n+(n===1?' sound':' sounds');
+  if('mediaSession' in navigator) navigator.mediaSession.playbackState=state.playing?'playing':'paused';
+}
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* ---------- sound source switch ---------- */
+function buildSources(){
+  const w=$('#src'); w.innerHTML='';
+  SOURCES.forEach(([k,label])=>{ const b=document.createElement('button'); b.textContent=label;
+    const n=k==='synth'?SOUNDS.length:RECORDED[k].length; b.disabled=k!=='synth'&&!n;
+    b.title=k==='synth'?'Sounds generated live in your browser':n?n+' sounds recorded with '+label+' (the rest use synth)':'No '+label+' recordings added yet';
+    if(state.source===k) b.className='on'; b.onclick=()=>setSource(k); w.appendChild(b); });
+}
+function setSource(k){
+  if(k===state.source) return; const before={}; Object.keys(state.sel).forEach(id=>before[id]=keyFor(id));
+  state.source=k; try{ localStorage.setItem('hush-source',k); }catch(e){}
+  buildSources();
+  if(ctx&&state.playing) Object.keys(state.sel).forEach(id=>{ if(before[id]!==keyFor(id)){ stopVoice(id); startVoice(id); } });
+  refresh(); toast(k==='synth'?'Using synthesized sounds':'Using '+SOURCES.find(x=>x[0]===k)[1]+' recordings');
+}
+
+/* ---------- mixes ---------- */
+const store={ get(){ try{ return JSON.parse(localStorage.getItem('hush-mixes')||'[]'); }catch(e){ return []; } },
+  set(v){ try{ localStorage.setItem('hush-mixes',JSON.stringify(v)); }catch(e){} } };
+function buildChips(){
+  const c=$('#chips'); c.innerHTML='';
+  const add=(name,mix,user,idx)=>{ const b=document.createElement('button'); b.className='chip'+(user?' user':'');
+    b.textContent=name; b.title=Object.keys(mix).map(id=>byId(id)?.name).filter(Boolean).join(' + ');
+    b.onclick=()=>{ loadMix(mix); toast('Playing "'+name+'"'); };
+    if(user){ const x=document.createElement('span'); x.className='x'; x.textContent='×'; x.title='Delete';
+      x.onclick=e=>{ e.stopPropagation(); const m=store.get(); m.splice(idx,1); store.set(m); buildChips(); }; b.appendChild(x); }
+    c.appendChild(b); };
+  store.get().forEach((m,i)=>add(m.name,m.mix,true,i));
+  PRESETS.forEach(p=>add(p.name,p.mix,false));
+}
+function mixToHash(){ return Object.entries(state.sel).map(([k,v])=>encodeURIComponent(k)+':'+v).join(','); }
+function syncHash(){ const h=mixToHash(); try{ history.replaceState(null,'',h?'#mix='+h:location.pathname+location.search); }catch(e){} }
+function hashToMix(){ const m=location.hash.match(/mix=([^&]+)/); if(!m) return null; const o={};
+  m[1].split(',').forEach(p=>{ const [k,v]=p.split(':'); if(k) o[decodeURIComponent(k)]=Math.max(0,Math.min(100,+v||60)); }); return o; }
+
+/* ---------- wiring ---------- */
+$('#playBtn').onclick=()=>state.playing?pause():play();
+$('#clearBtn').onclick=clearAll;
+$('#randBtn').onclick=shuffle;
+$('#master').oninput=e=>{ paintRange(e.target); if(masterGain) masterGain.gain.setTargetAtTime(volCurve(+e.target.value),ctx.currentTime,0.05); };
+paintRange($('#master'));
+$('#timerBtn').onclick=e=>{ e.stopPropagation(); $('#timerMenu').classList.toggle('open'); };
+document.addEventListener('click',e=>{ if(!e.target.closest('.tm')) $('#timerMenu').classList.remove('open'); });
+$('#saveMix').onclick=()=>{ if(!Object.keys(state.sel).length) return toast('Turn on some sounds first');
+  const name=$('#mixName').value.trim()||'My mix '+(store.get().length+1); const m=store.get(); m.unshift({name,mix:{...state.sel}}); store.set(m); $('#mixName').value=''; buildChips(); toast('Saved "'+name+'"'); };
+$('#mixName').onkeydown=e=>{ if(e.key==='Enter') $('#saveMix').click(); };
+$('#copyLink').onclick=async()=>{ if(!Object.keys(state.sel).length) return toast('Turn on some sounds first'); syncHash();
+  try{ await navigator.clipboard.writeText(location.href); toast('Link copied'); }catch(e){ toast('Copy the address bar to share this mix'); } };
+$('#file').onchange=async e=>{
+  const files=[...e.target.files]; e.target.value=''; if(!files.length) return;
+  for(const f of files){ const def={id:'u_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),cat:'mine',ico:'🎵',name:f.name.replace(/\.[^.]+$/,'').slice(0,40),desc:'Your sound',blob:f};
+    custom.push(def); await DB.put({id:def.id,name:def.name,blob:f}); }
+  state.cat='mine'; buildTabs(); buildGrid(); toast(files.length>1?files.length+' sounds added':'Sound added');
+};
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input[type=text],input:not([type]),textarea')) return;
+  if(e.code==='Space'){ e.preventDefault(); if(Object.keys(state.sel).length) state.playing?pause():play(); }
+  else if(e.key==='r'||e.key==='R') shuffle();
+  else if(e.key==='c'||e.key==='C') clearAll();
+});
+if('mediaSession' in navigator){
+  try{ navigator.mediaSession.metadata=new MediaMetadata({title:'Hush',artist:'Offline noise mixer'});
+    navigator.mediaSession.setActionHandler('play',play); navigator.mediaSession.setActionHandler('pause',pause); }catch(e){}
+}
+
+(async function init(){
+  try{ await DB.open(); (await DB.all()).forEach(r=>custom.push({id:r.id,cat:'mine',ico:'🎵',name:r.name,desc:'Your sound',blob:r.blob})); }catch(e){}
+  const h=hashToMix(); if(h) Object.entries(h).forEach(([k,v])=>{ if(byId(k)) state.sel[k]=v; });
+  buildSources(); buildTabs(); buildGrid(); buildChips(); buildTimerMenu(); refreshTimer(); refresh();
+  if(h&&Object.keys(state.sel).length) toast('Mix loaded. Press play');
+})();
+window.__hush={SOUNDS,renderSound};
+</script>
+</body>
+</html>
